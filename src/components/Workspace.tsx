@@ -75,6 +75,7 @@ export default function Workspace() {
   if (output.ok === true && viewMode === 'ast') {
     const val = output.val as AST
     adjustOffsetOfAst(val, val.span.start)
+    closure(val)
   }
 
   return (
@@ -115,7 +116,23 @@ function adjustOffsetOfAst(obj: unknown, startOffset: number) {
     })
   }
 }
-
+function closure(obj) {
+  let id = 0
+  function addId(obj: any) {
+    if (Array.isArray(obj)) {
+      obj.forEach(addId)
+    } else if (isRecord(obj)) {
+      Object.entries(obj).forEach(([k, v]) => {
+        if (k === 'type' && v === 'Identifier') {
+          obj['symbol_id'] = id++
+        } else {
+          addId(obj[k])
+        }
+      })
+    }
+  }
+  addId(obj)
+}
 function isRecord(obj: unknown): obj is Record<string, unknown> {
   return typeof obj === 'object' && obj !== null
 }
